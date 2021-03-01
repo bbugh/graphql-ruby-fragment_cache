@@ -20,15 +20,24 @@ module GraphQL
         private
 
         def batched_persist(query)
+          FragmentCache.instrument("fragment_cacher.batched_persist_count", count: query.context.fragments, any_nil: query.context.fragments.any?(value: nil))
           query.context.fragments.group_by(&:options).each do |options, group|
             hash = group.map { |fragment| [fragment.cache_key, fragment.value] }.to_h
-            FragmentCache.cache_store.write_multi(hash, **options)
+            FragmentCache.instrument("fragment_cacher.batched_persist_write") do |payload|
+              payload[:hash] = hash
+              payload[:result] = FragmentCache.cache_store.write_multi(hash, **options)
+            end
           end
         end
 
         def persist(query)
           query.context.fragments.each do |fragment|
-            FragmentCache.cache_store.write(fragment.cache_key, fragment.value, **fragment.options)
+            FragmentCache.instrument("fragment_cacher.persist_write") do |payload|
+              payload[:cache_key] = fragment.cache_key
+              payload[:value] = fragment.value
+              payload[:options] = fragment.options
+              payload[:result] = FragmentCache.cache_store.write(fragment.cache_key, fragment.value, **fragment.options)
+            end
           end
         end
       end

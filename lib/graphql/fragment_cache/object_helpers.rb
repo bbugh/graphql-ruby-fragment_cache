@@ -34,12 +34,25 @@ module GraphQL
         fragment = Fragment.new(context_to_use, **options)
 
         keep_in_context = options.delete(:keep_in_context)
-        if (cached = fragment.read(keep_in_context))
-          return cached == Fragment::NIL_IN_CACHE ? nil : raw_value(cached)
+
+        cached = GraphQL::FragmentCache::instrument("cache_fragment.read") do |payload|
+          payload[:cache_key] = fragment.cache_key
+          payload[:result] = fragment.read(keep_in_context)
         end
 
-        (block_given? ? block.call : object_to_cache).tap do |resolved_value|
-          context_to_use.fragments << fragment
+        if (cached)
+          if cached == Fragment::NIL_IN_CACHE
+            return GraphQL::FragmentCache::instrument("cache_fragment.cache_hit_nil_value") { nil }
+          else
+            return GraphQL::FragmentCache::instrument("cache_fragment.cache_hit_has_value") { |payload| payload[:result] = raw_value(cached) }
+          end
+        end
+
+        GraphQL::FragmentCache::instrument("cache_fragment.cache_miss_resolve") do |payload|
+          payload[:result] = (block_given? ? block.call : object_to_cache).tap do |resolved_value|
+            payload[:resolved_value] = resolved_value
+            context_to_use.fragments << fragment
+          end
         end
       end
     end

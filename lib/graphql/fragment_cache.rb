@@ -48,6 +48,12 @@ module GraphQL
         Gem::Dependency.new("graphql", ">= 1.12.0").match?("graphql", GraphQL::VERSION)
       end
 
+      def instrument(event_name, metadata = {})
+        operation = "#{event_name}.graphql-fragment-cache"
+        payload = metadata.merge(operation: operation)
+        ActiveSupport::Notifications.instrument(operation, payload) { block_given? ? yield(payload) : payload  }
+      end
+
       private
 
       def verify_interpreter_and_analysis!(schema_defn)

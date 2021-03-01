@@ -43,8 +43,14 @@ module GraphQL
       end
 
       def value_from_cache
-        FragmentCache.cache_store.read(cache_key).tap do |cached|
-          return NIL_IN_CACHE if cached.nil? && FragmentCache.cache_store.exist?(cache_key)
+        value_from_cache = FragmentCache.cache_store.read(cache_key)
+        FragmentCache.instrument("fragment.value_from_cache", cache_key: cache_key, value_from_cache: value_from_cache)
+
+        value_from_cache.tap do |cached|
+          if cached.nil? && FragmentCache.cache_store.exist?(cache_key)
+            FragmentCache.instrument("fragment.value_from_cache_hit_but_nil", cache_key: cache_key)
+            return NIL_IN_CACHE
+          end
         end
       end
 
