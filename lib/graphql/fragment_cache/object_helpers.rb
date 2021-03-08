@@ -37,7 +37,10 @@ module GraphQL
 
         cached = GraphQL::FragmentCache::instrument("cache_fragment.read") do |payload|
           payload[:cache_key] = fragment.cache_key
-          payload[:result] = fragment.read(keep_in_context)
+          payload[:path] = context_to_use&.path&.join(File::SEPARATOR)
+          result = fragment.read(keep_in_context)
+          payload[:has_result] = result.present?
+          result
         end
 
         if (cached)
