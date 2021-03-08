@@ -29,7 +29,7 @@ module GraphQL
       end
 
       def value
-        final_value.dig(*path)
+        final_value&.dig(*path)
       end
 
       private
@@ -53,7 +53,7 @@ module GraphQL
       end
 
       def final_value
-        @final_value ||= interpreter_context[:runtime].final_value
+        interpreter_context[:runtime].final_value
       end
     end
   end
