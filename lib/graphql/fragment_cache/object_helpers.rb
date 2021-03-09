@@ -22,7 +22,16 @@ module GraphQL
 
       NO_OBJECT = Object.new
 
+      def async_cache_fragment(object_to_cache = NO_OBJECT, **options, &block)
+        context_to_use = options.delete(:context)
+        context_to_use = context if context_to_use.nil? && respond_to?(:context)
+        raise ArgumentError, "cannot find context, please pass it explicitly" unless context_to_use
+
+        LazyResult.new(object_to_cache, context_to_use, **options, &block)
+      end
+
       def cache_fragment(object_to_cache = NO_OBJECT, **options, &block)
+        # async_cache_fragment(object_to_cache, **options, &block).sync
         raise ArgumentError, "Block or argument must be provided" unless block_given? || object_to_cache != NO_OBJECT
 
         options[:object] = object_to_cache if object_to_cache != NO_OBJECT

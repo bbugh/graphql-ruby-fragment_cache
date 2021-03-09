@@ -29,6 +29,8 @@ module GraphQL
         schema_defn.instrument(:query, Schema::Instrumentation)
         schema_defn.extend(Schema::Patch)
 
+        schema_defn.lazy_resolve(GraphQL::FragmentCache::LazyResult, :sync)
+
         GraphQL::Pagination::Connections.prepend(Connections::Patch)
       end
 

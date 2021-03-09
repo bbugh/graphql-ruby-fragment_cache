@@ -53,7 +53,7 @@ module GraphQL
       end
 
       def final_value
-        @final_value ||= context.query.result['data']
+        context.query.result['data'] || interpreter_context[:runtime].final_value
       end
     end
   end
